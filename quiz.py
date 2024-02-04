@@ -1,4 +1,5 @@
 import os
+from random import choice
 
 
 def parse_quiz(file):
@@ -14,11 +15,9 @@ def parse_quiz(file):
     return quiz
 
 
-def main():
+def get_quiz():
     questions = os.path.join('quiz-question', '3f15.txt')
     with open(questions, encoding='KOI8-R') as file:
         quiz = parse_quiz(file)
 
-
-if __name__ == '__main__':
-    main()
+    return quiz

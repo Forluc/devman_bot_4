@@ -1,8 +1,10 @@
 import logging
+from random import choice
 
-from telegram import Update, ReplyKeyboardMarkup
+from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 from environs import Env
+from quiz import get_quiz
 
 logger = logging.getLogger(__name__)
 
@@ -16,9 +18,11 @@ def start(update: Update, context: CallbackContext):
                              text='Привет! Я бот для викторин!')
 
 
-def echo(update: Update, context: CallbackContext):
-    """Echo the user message."""
-    context.bot.send_message(chat_id=update.effective_chat.id, text=update.message.text)
+def quiz(update: Update, context: CallbackContext):
+    reply_markup = ReplyKeyboardRemove()
+    if update.message.text == 'Новый вопрос':
+        question, answer = choice(list(get_quiz().items()))
+        context.bot.send_message(chat_id=update.effective_chat.id, text=question, reply_markup=reply_markup)
 
 
 def main():
@@ -31,7 +35,7 @@ def main():
 
     dispatcher = updater.dispatcher
     dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, quiz))
 
     updater.start_polling()
     updater.idle()
