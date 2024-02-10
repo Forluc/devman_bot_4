@@ -3,10 +3,9 @@ import random
 
 import redis
 from environs import Env
+from telegram import ReplyKeyboardMarkup
 from telegram.ext import (CommandHandler, ConversationHandler, Filters,
                           MessageHandler, Updater)
-
-from markups import main_markup, new_answer_markup
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +38,7 @@ class QuizBot:
 
     def start(self, update, context):
         context.bot.send_message(chat_id=update.effective_chat.id,
-                                 reply_markup=main_markup(),
+                                 reply_markup=markup(),
                                  text='Привет! Я бот для викторин!')
 
         return NEW_QUESTION
@@ -49,8 +48,8 @@ class QuizBot:
         self.answer = self.redis.get(self.question)
 
         context.bot.send_message(chat_id=update.effective_chat.id,
-                                 reply_markup=main_markup(),
-                                 text=f'{self.question}\n(Ответ должен начинаться с заглавной буквы и оканчиваться точкой, а также разделяться запятыми или союзами по необходимости)')
+                                 reply_markup=markup(),
+                                 text=f'{self.question}')
 
         return SOLUTION_ATTEMPT
 
@@ -60,13 +59,13 @@ class QuizBot:
 
         elif update.message.text == self.answer:
             context.bot.send_message(chat_id=update.effective_chat.id,
-                                     reply_markup=new_answer_markup(),
+                                     reply_markup=markup(),
                                      text='Правильно! Поздравляю! Для следующего вопроса нажми «Новый вопрос»')
             return NEW_QUESTION
 
         else:
             context.bot.send_message(chat_id=update.effective_chat.id,
-                                     reply_markup=main_markup(),
+                                     reply_markup=markup(),
                                      text='Неправильно… Попробуешь ещё раз?')
             return SURRENDER
 
@@ -77,9 +76,13 @@ class QuizBot:
         self.answer = self.redis.get(self.question)
 
         context.bot.send_message(chat_id=update.effective_chat.id,
-                                 reply_markup=main_markup(),
-                                 text=f'{self.question}\n(Ответ должен начинаться с заглавной буквы и оканчиваться точкой, а также разделяться запятыми или союзами по необходимости.)')
+                                 reply_markup=markup(),
+                                 text=f'{self.question}')
         return SOLUTION_ATTEMPT
+
+
+def markup():
+    return ReplyKeyboardMarkup([['Новый вопрос', 'Сдаться'], ['Мой счёт']])
 
 
 def main():

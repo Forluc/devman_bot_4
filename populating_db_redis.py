@@ -25,10 +25,6 @@ def get_quiz():
     return quiz
 
 
-def save_question(question, answer, redis_connection):
-    redis_connection.set(question, answer)
-
-
 def main():
     env = Env()
     env.read_env()
@@ -37,8 +33,8 @@ def main():
                                    port=env.str('REDIS_PORT'),
                                    password=env.str('REDIS_PASSWORD'))
 
-    for questions, answer in get_quiz().items():
-        save_question(questions, answer, redis_connection)
+    for question, answer in get_quiz().items():
+        redis_connection.set(question, answer)
 
 
 if __name__ == '__main__':
