@@ -1,5 +1,7 @@
 import os
-from random import choice
+
+import redis
+from environs import Env
 
 
 def parse_quiz(file):
@@ -21,3 +23,23 @@ def get_quiz():
         quiz = parse_quiz(file)
 
     return quiz
+
+
+def save_question(question, answer, redis_connection):
+    redis_connection.set(question, answer)
+
+
+def main():
+    env = Env()
+    env.read_env()
+
+    redis_connection = redis.Redis(host=env.str('REDIS_HOST'),
+                                   port=env.str('REDIS_PORT'),
+                                   password=env.str('REDIS_PASSWORD'))
+
+    for questions, answer in get_quiz().items():
+        save_question(questions, answer, redis_connection)
+
+
+if __name__ == '__main__':
+    main()
