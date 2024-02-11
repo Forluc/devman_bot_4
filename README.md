@@ -49,7 +49,7 @@ REDIS_PORT='your_port'
 REDIS_PASSWORD='your_password'
 ```
 
-## Запуск ботов
+### Запуск ботов
 
 Запуск бота Вконтакте на Linux(Python 3) или Windows:
 
@@ -63,7 +63,7 @@ $ python vk_bot.py
 $ python tg_bot.py
 ```
 
-## Добавление вопросов в БД [Redis](https://app.redislabs.com/)
+### Добавление вопросов в БД [Redis](https://app.redislabs.com/)
 
 - Заполнить файл в папке quiz-question `3f15.txt` нужными данными. В данном примере файл закодирован `KOI8-R`.
 - Обязательны к заполнению в `.env` данные от Redis(host, port, password)
