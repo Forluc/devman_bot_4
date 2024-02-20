@@ -38,7 +38,7 @@ class QuizBot:
 
     def start(self, update, context):
         context.bot.send_message(chat_id=update.effective_chat.id,
-                                 reply_markup=markup(),
+                                 reply_markup=get_markup(),
                                  text='Привет! Я бот для викторин!')
 
         return NEW_QUESTION
@@ -48,7 +48,7 @@ class QuizBot:
         self.answer = self.redis.get(self.question)
 
         context.bot.send_message(chat_id=update.effective_chat.id,
-                                 reply_markup=markup(),
+                                 reply_markup=get_markup(),
                                  text=f'{self.question}')
 
         return SOLUTION_ATTEMPT
@@ -59,13 +59,13 @@ class QuizBot:
 
         elif update.message.text == self.answer:
             context.bot.send_message(chat_id=update.effective_chat.id,
-                                     reply_markup=markup(),
+                                     reply_markup=get_markup(),
                                      text='Правильно! Поздравляю! Для следующего вопроса нажми «Новый вопрос»')
             return NEW_QUESTION
 
         else:
             context.bot.send_message(chat_id=update.effective_chat.id,
-                                     reply_markup=markup(),
+                                     reply_markup=get_markup(),
                                      text='Неправильно… Попробуешь ещё раз?')
             return SURRENDER
 
@@ -76,12 +76,12 @@ class QuizBot:
         self.answer = self.redis.get(self.question)
 
         context.bot.send_message(chat_id=update.effective_chat.id,
-                                 reply_markup=markup(),
+                                 reply_markup=get_markup(),
                                  text=f'{self.question}')
         return SOLUTION_ATTEMPT
 
 
-def markup():
+def get_markup():
     return ReplyKeyboardMarkup([['Новый вопрос', 'Сдаться'], ['Мой счёт']])
 
 
