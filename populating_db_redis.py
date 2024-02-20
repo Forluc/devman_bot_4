@@ -1,3 +1,4 @@
+import argparse
 import os
 
 import redis
@@ -17,8 +18,7 @@ def parse_quiz(file):
     return quiz
 
 
-def get_quiz():
-    questions = os.path.join('quiz-question', '3f15.txt')
+def get_quiz(questions):
     with open(questions, encoding='KOI8-R') as file:
         quiz = parse_quiz(file)
 
@@ -29,11 +29,16 @@ def main():
     env = Env()
     env.read_env()
 
+    parser = argparse.ArgumentParser(description='Скрипт, добавляющий вопросы и ответы в Redis')
+    parser.add_argument('-q', '--questions', help='Название файла с вопросами', default=env.str('FILENAME'))
+    args = parser.parse_args()
+    questions = os.path.join('quiz-question', args.questions)
+
     redis_connection = redis.Redis(host=env.str('REDIS_HOST'),
                                    port=env.str('REDIS_PORT'),
                                    password=env.str('REDIS_PASSWORD'))
 
-    for question, answer in get_quiz().items():
+    for question, answer in get_quiz(questions).items():
         redis_connection.set(question, answer)
 
 
