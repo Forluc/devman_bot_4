@@ -32,17 +32,13 @@ REDIS_PASSWORD='your_password'
 
 ### Добавление остальных чувствительных данных в `.env`
 
-Обязательные к заполнению переменные:
-
 `TG_BOT_API` = Присвоить `API-токен` телеграм
 бота([инструкция](https://robochat.io/docs/kak-sozdat-chat-bota-v-telegram/))
 
 `VK_API_KEY` = Присвоить `API-ключ` группы
 вконтакте. ([Инструкция](https://pechenek.net/social-networks/vk/api-vk-poluchaem-klyuch-dostupa-token-gruppy/))
 
-Необязательные к заполнению переменные:
-
-`FILENAME` = Присвоить `название файла`, вопросы которого, необходимо добавить в [Redis](https://app.redislabs.com/)
+`QUIZ_NAME` = Присвоить `название файла`, вопросы которого, будут отправляться пользователям(по умолчанию `example.txt`)
 
 После заполнения данных, можно прочитать файл `.env` можно увидеть примерно следующее:
 
@@ -53,7 +49,7 @@ VK_API_KEY='vkapikeyexample'
 REDIS_HOST='your_address'
 REDIS_PORT='your_port'
 REDIS_PASSWORD='your_password'
-FILENAME='filename.txt'
+QUIZ_NAME='example.txt'
 ```
 
 ### Запуск ботов
@@ -69,36 +65,6 @@ $ python vk_bot.py
 ```bash
 $ python tg_bot.py
 ```
-
-### Добавление вопросов в БД [Redis](https://app.redislabs.com/)
-
-- Добавить файл в папку quiz-question и заполнить нужными вопросами и ответами. Файл закодирован `KOI8-R`(Пример
-  заполнения файла есть в папке, название файла `example.txt`)
-- Обязательны к заполнению в `.env` данные от Redis(host, port, password) и название файла
-
-После заполнения данных, можно прочитать файл `.env` можно увидеть примерно следующее:
-
-```bash
-$ cat .env
-REDIS_HOST='your_address'
-REDIS_PORT='your_port'
-REDIS_PASSWORD='your_password'
-FILENAME='filename.txt'
-```
-
-Запуск скрипта без использования argparse:
-
-```bash
-$ python populating_db_redis.py
-```
-
-Запуск скрипта с использованием argparse:
-
-```bash
-$ python populating_db_redis.py --questions example.txt
-```
-
-Какие вопросы добавлены в БД можно посмотреть с помощью [RedisInsight](https://app.redislabs.com/)
 
 ### Цель проекта
 

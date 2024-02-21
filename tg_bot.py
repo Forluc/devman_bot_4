@@ -7,78 +7,60 @@ from telegram import ReplyKeyboardMarkup
 from telegram.ext import (CommandHandler, ConversationHandler, Filters,
                           MessageHandler, Updater)
 
+from quiz import get_quiz
+
 logger = logging.getLogger(__name__)
 
 NEW_QUESTION, SOLUTION_ATTEMPT, SURRENDER = range(3)
 
 
-class QuizBot:
-    def __init__(self, tg_bot_api, redis_connection):
-        self.question = None
-        self.answer = None
-        self.redis = redis_connection
+def start(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id,
+                             reply_markup=get_markup(),
+                             text='Привет! Я бот для викторин!')
 
-        self.updater = Updater(tg_bot_api)
-        self.dispatcher = self.updater.dispatcher
+    return NEW_QUESTION
 
-        conversation_handler = ConversationHandler(
-            entry_points=[CommandHandler('start', self.start)],
 
-            states={
-                NEW_QUESTION: [MessageHandler(Filters.regex('^Новый вопрос$'), self.handle_new_question_request)],
-                SURRENDER: [MessageHandler(Filters.regex('^Сдаться$'), self.handle_surrender),
-                            MessageHandler(Filters.text, self.handle_solution_attempt)],
-                SOLUTION_ATTEMPT: [MessageHandler(Filters.text, self.handle_solution_attempt)],
-            },
+def handle_new_question_request(update, context):
+    question, answer = random.choice(list(get_quiz(context.bot_data['quiz']).items()))
+    context.bot_data['redis'].set(update.effective_chat.id, answer)
 
-            fallbacks=[]
-        )
+    context.bot.send_message(chat_id=update.effective_chat.id,
+                             reply_markup=get_markup(),
+                             text=question)
 
-        self.dispatcher.add_handler(conversation_handler)
+    return SOLUTION_ATTEMPT
 
-    def start(self, update, context):
+
+def handle_solution_attempt(update, context):
+    if update.message.text == 'Новый вопрос':
+        return handle_new_question_request(update, context)
+
+    elif update.message.text == context.bot_data['redis'].get(update.effective_chat.id):
         context.bot.send_message(chat_id=update.effective_chat.id,
                                  reply_markup=get_markup(),
-                                 text='Привет! Я бот для викторин!')
-
+                                 text='Правильно! Поздравляю! Для следующего вопроса нажми «Новый вопрос»')
         return NEW_QUESTION
 
-    def handle_new_question_request(self, update, context):
-        self.question = random.choice(self.redis.keys())
-        self.answer = self.redis.get(self.question)
-
+    else:
         context.bot.send_message(chat_id=update.effective_chat.id,
                                  reply_markup=get_markup(),
-                                 text=f'{self.question}')
+                                 text='Неправильно… Попробуешь ещё раз?')
+        return SURRENDER
 
-        return SOLUTION_ATTEMPT
 
-    def handle_solution_attempt(self, update, context):
-        if update.message.text == 'Новый вопрос':
-            return self.handle_new_question_request(update, context)
+def handle_surrender(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id,
+                             text=f'Правильный ответ: {context.bot_data["redis"].get(update.effective_chat.id)}')
 
-        elif update.message.text == self.answer:
-            context.bot.send_message(chat_id=update.effective_chat.id,
-                                     reply_markup=get_markup(),
-                                     text='Правильно! Поздравляю! Для следующего вопроса нажми «Новый вопрос»')
-            return NEW_QUESTION
+    question, answer = random.choice(list(get_quiz(context.bot_data['quiz']).items()))
+    context.bot_data['redis'].set(update.effective_chat.id, answer)
 
-        else:
-            context.bot.send_message(chat_id=update.effective_chat.id,
-                                     reply_markup=get_markup(),
-                                     text='Неправильно… Попробуешь ещё раз?')
-            return SURRENDER
-
-    def handle_surrender(self, update, context):
-        context.bot.send_message(chat_id=update.effective_chat.id, text=f'Правильный ответ: {self.answer}')
-
-        self.question = random.choice(self.redis.keys())
-        self.answer = self.redis.get(self.question)
-
-        context.bot.send_message(chat_id=update.effective_chat.id,
-                                 reply_markup=get_markup(),
-                                 text=f'{self.question}')
-        return SOLUTION_ATTEMPT
+    context.bot.send_message(chat_id=update.effective_chat.id,
+                             reply_markup=get_markup(),
+                             text=question)
+    return SOLUTION_ATTEMPT
 
 
 def get_markup():
@@ -89,15 +71,33 @@ def main():
     env = Env()
     env.read_env()
 
-    tg_bot_api = env.str('TG_BOT_API')
+    quiz = env.str('QUIZ_NAME', 'example.txt')
     redis_connection = redis.Redis(host=env.str('REDIS_HOST'), port=env.str('REDIS_PORT'),
                                    password=env.str('REDIS_PASSWORD'), decode_responses=True)
 
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-    bot = QuizBot(tg_bot_api=tg_bot_api, redis_connection=redis_connection)
-    bot.updater.start_polling()
-    bot.updater.idle()
+    updater = Updater(env.str('TG_BOT_API'))
+    dispatcher = updater.dispatcher
+    dispatcher.bot_data['redis'] = redis_connection
+    dispatcher.bot_data['quiz'] = quiz
+    dispatcher.add_handler(
+        ConversationHandler(
+            entry_points=[CommandHandler('start', start)],
+
+            states={
+                NEW_QUESTION: [MessageHandler(Filters.regex('^Новый вопрос$'), handle_new_question_request)],
+                SURRENDER: [MessageHandler(Filters.regex('^Сдаться$'), handle_surrender),
+                            MessageHandler(Filters.text, handle_solution_attempt)],
+                SOLUTION_ATTEMPT: [MessageHandler(Filters.text, handle_solution_attempt)],
+            },
+
+            fallbacks=[]
+        )
+    )
+
+    updater.start_polling()
+    updater.idle()
 
 
 if __name__ == '__main__':
