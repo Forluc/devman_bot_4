@@ -23,7 +23,7 @@ def start(update, context):
 
 
 def handle_new_question_request(update, context):
-    question, answer = random.choice(list(get_quiz(context.bot_data['quiz']).items()))
+    question, answer = random.choice(list(context.bot_data['quiz'].items()))
     context.bot_data['redis'].set(update.effective_chat.id, answer)
 
     context.bot.send_message(chat_id=update.effective_chat.id,
@@ -54,7 +54,7 @@ def handle_surrender(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id,
                              text=f'Правильный ответ: {context.bot_data["redis"].get(update.effective_chat.id)}')
 
-    question, answer = random.choice(list(get_quiz(context.bot_data['quiz']).items()))
+    question, answer = random.choice(list(context.bot_data['quiz'].items()))
     context.bot_data['redis'].set(update.effective_chat.id, answer)
 
     context.bot.send_message(chat_id=update.effective_chat.id,
@@ -71,7 +71,7 @@ def main():
     env = Env()
     env.read_env()
 
-    quiz = env.str('QUIZ_NAME', 'example.txt')
+    quiz = get_quiz(env.str('QUIZ_NAME', 'example.txt'))
     redis_connection = redis.Redis(host=env.str('REDIS_HOST'), port=env.str('REDIS_PORT'),
                                    password=env.str('REDIS_PASSWORD'), decode_responses=True)
 

@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 def handle_new_question_request(event, vk_api, redis_connection, quiz):
-    question, answer = random.choice(list(get_quiz(quiz).items()))
+    question, answer = random.choice(list(quiz.items()))
     redis_connection.set(event.user_id, answer)
 
     send_message(event, vk_api, question)
@@ -30,7 +30,7 @@ def handle_solution_attempt(event, vk_api, redis_connection):
 def handle_surrender(event, vk_api, redis_connection, quiz):
     send_message(event, vk_api, f'Правильный ответ: {redis_connection.get(event.user_id)}')
 
-    question, answer = random.choice(list(get_quiz(quiz).items()))
+    question, answer = random.choice(list(quiz.items()))
     redis_connection.set(event.user_id, answer)
 
     send_message(event, vk_api, question)
@@ -56,7 +56,7 @@ def main():
     env = Env()
     env.read_env()
 
-    quiz = env.str('QUIZ_NAME', 'example.txt')
+    quiz = get_quiz(env.str('QUIZ_NAME', 'example.txt'))
     redis_connection = redis.Redis(host=env.str('REDIS_HOST'), port=env.str('REDIS_PORT'),
                                    password=env.str('REDIS_PASSWORD'), decode_responses=True)
 
